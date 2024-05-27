@@ -3,6 +3,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import { createServer } from 'http';
 import ImageRouter from './routers/ImageRouter';
+import VideoRouter from './routers/VideoRouter';
 
 const PORT = process.env.PORT || 5000;
 
@@ -22,8 +23,10 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
-app.use('/', ImageRouter);
+app.use('/images', ImageRouter);
+app.use('/', VideoRouter);
 app.use('/images', express.static('images'));
+app.use('/videos', express.static('videos'));
 
 const start = async () => {
   try {

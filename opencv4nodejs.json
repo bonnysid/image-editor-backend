@@ -1,0 +1,7 @@
+{
+  "opencvVersion": "4.5.3",
+  "flags": "-DBUILD_LIST=core,imgproc,videoio",
+  "modulesPath": "C:/opencv/build",
+  "buildWithCuda": false,
+  "isAutoBuildDisabled": true
+}
