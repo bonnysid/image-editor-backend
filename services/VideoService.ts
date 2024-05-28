@@ -5,7 +5,8 @@ import { Metadata, PNG } from 'pngjs';
 import { ISizeCalculationResult } from 'image-size/dist/types/interface';
 import { spawn } from 'child_process';
 import * as path from 'path';
-import cv from 'opencv4nodejs';
+import ffmpeg from 'fluent-ffmpeg';
+// import cv from 'opencv4nodejs';
 
 type OnReadyProps = {
   info: ISizeCalculationResult & {
@@ -23,6 +24,9 @@ const COLOR_MODELS = {
   6: 'RGBA',
 }
 
+ffmpeg.setFfmpegPath('C:/ffmpeg/bin/ffmpeg.exe'); // Укажите правильный путь к ffmpeg.exe
+ffmpeg.setFfprobePath('C:/ffmpeg/bin/ffprobe.exe');
+
 const ffmpegPath = 'ffmpeg'; // Или полный путь к ffmpeg, например, 'C:\\ffmpeg\\bin\\ffmpeg.exe'
 export class VideoService {
   static processVideo(file: any, processType: string): Promise<string> {
@@ -36,71 +40,43 @@ export class VideoService {
 
       fs.renameSync(file.path, newFilePath);
 
-      const cap = new cv.VideoCapture(path.resolve(newFilePath));
-      const frames: cv.Mat[] = [];
-      let frame: cv.Mat;
+      const ffmpegCommand = ffmpeg(path.resolve(newFilePath));
 
-      const bgSubtractor = new cv.BackgroundSubtractorMOG2();
+      console.log(processType)
 
-      while ((frame = cap.read()).empty === false) {
-        let processedFrame: cv.Mat;
-
-        if (processType === 'background_subtraction') {
-          const fgMask = bgSubtractor.apply(frame);
-          processedFrame = fgMask;
-        } else if (processType === 'blur_moving_objects') {
-          const fgMask = bgSubtractor.apply(frame);
-          const blurredFrame = frame.gaussianBlur(new cv.Size(21, 21), 0);
-          processedFrame = frame.copy();
-          blurredFrame.copyTo(processedFrame, fgMask);
-        }
-
-        // @ts-ignore
-        frames.push(processedFrame);
+      if (processType === 'background_subtraction') {
+          console.log('Applying background subtraction filter');
+          ffmpegCommand
+              .videoFilters([
+                  // 'minterpolate', // Создание интерполяции кадров
+                  'tblend=all_mode=difference', // Вычитание кадров
+                  'hue=s=0' // Конвертация в оттенки серого
+              ]);
+          // .videoFilters([
+          //     'tblend=all_mode=subtract,all_opacity=0.7',
+          //     'hue=s=0'
+          // ]);
+      } else if (processType === 'blur_moving_objects') {
+          ffmpegCommand.videoFilters('tblend=all_mode=average,framestep=2');
       }
 
-      const tempDir = path.join(__dirname, '../uploads/temp');
-      if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir);
-      }
-
-      const tempFramesPath = path.join(tempDir, 'frame_%04d.png');
-      frames.forEach((frame, index) => {
-        const filePath = tempFramesPath.replace('%04d', String(index).padStart(4, '0'));
-        cv.imwrite(filePath, frame);
-      });
-
-      const ffmpegArgs = [
-        '-y', // Overwrite output files without asking
-        '-i', path.join(tempDir, 'frame_%04d.png'), // Input file
-        '-vf', filter,
-        '-c:v', 'libx264', // Video codec
-        '-pix_fmt', 'yuv420p', // Pixel format
-        `videos/${outputPath}` // Output file
-      ];
-
-      const ffmpeg = spawn('C:\\ffmpeg\\bin\\ffmpeg.exe', ffmpegArgs);
-
-      ffmpeg.stdout.on('data', (data) => {
-        console.log(`stdout: ${data}`);
-      });
-
-      ffmpeg.stderr.on('data', (data) => {
-        console.error(`stderr: ${data}`);
-      });
-
-      ffmpeg.on('close', (code) => {
-        frames.forEach((_, index) => {
-          const filePath = tempFramesPath.replace('%04d', String(index).padStart(4, '0'));
-          fs.unlinkSync(filePath);
-        });
-
-        if (code === 0) {
-          resolve(outputPath);
-        } else {
-          reject(new Error(`FFmpeg exited with code ${code}`));
-        }
-      });
+      ffmpegCommand
+          .output(path.join('videos', outputPath))
+          .on('start', (commandLine) => {
+            console.log('Spawned Ffmpeg with command: ' + commandLine);
+          })
+          .on('progress', (progress) => {
+            console.log(`Processing: ${progress.percent}% done`);
+          })
+          .on('end', () => {
+            console.log('Processing finished successfully');
+            fs.unlinkSync(path.resolve(newFilePath));
+            resolve(outputPath);
+          })
+          .on('error', (err) => {
+            console.error('Error processing video:', err);
+          })
+          .run();
     });
   };
 

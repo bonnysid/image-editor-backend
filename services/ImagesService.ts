@@ -4,6 +4,8 @@ import sizeOf from 'image-size';
 import { Metadata, PNG } from 'pngjs';
 import { ISizeCalculationResult } from 'image-size/dist/types/interface';
 import sharp from 'sharp';
+import {PythonShell} from "python-shell";
+import * as path from "node:path";
 
 type OnReadyProps = {
   info: ISizeCalculationResult & {
@@ -56,6 +58,15 @@ export class ImagesService {
       })
     }
   }
+
+  static async detectKeypoints(imgPath: string, method: string, outputPath: string) {
+    let options = {
+      pythonPath: 'C:\\Users\\user\\AppData\\Local\\Programs\\Python\\Python36-32\\python.exe',
+      args: [imgPath, path.resolve(outputPath), method]
+    };
+
+    return await PythonShell.run('services/process_images.py', options);
+  };
 
   static getCMYK(file: any, host: string, onReady: (props: OnReadyProps) => void) {
     const fileExtension = file.originalname.split('.').pop();

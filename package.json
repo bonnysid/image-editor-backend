@@ -10,9 +10,9 @@
   "author": "",
   "opencv4nodejs": {
     "disableAutoBuild": 1,
-    "opencvIncludeDir": "C:\\opencv\\build\\include",
-    "opencvLibDir": "C:\\opencv\\build\\x64\\vc16\\lib",
-    "opencvBinDir": "C:\\opencv\\build\\x64\\vc16\\bin"
+    "opencvIncludeDir": "C:\\tools\\opencv\\build\\include",
+    "opencvLibDir": "C:\\tools\\opencv\\build\\x64\\vc16\\lib",
+    "opencvBinDir": "C:\\tools\\opencv\\build\\x64\\vc16\\bin"
   },
   "license": "ISC",
   "dependencies": {
@@ -31,14 +31,19 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-validator": "^7.0.1",
+    "fluent-ffmpeg": "^2.1.3",
     "image-size": "^1.1.1",
     "multer": "^1.4.5-lts.1",
     "nodemon": "^3.1.0",
     "opencv-build": "^0.1.9",
     "opencv4nodejs": "^5.6.0",
     "pngjs": "^7.0.0",
+    "python-shell": "^5.0.0",
     "sharp": "^0.33.3",
     "ts-node": "^10.9.2",
     "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/fluent-ffmpeg": "^2.1.24"
   }
 }
